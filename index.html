@@ -69,34 +69,31 @@
                 }
             });
         }
-
-        // Replace this URL with your model's GitHub URL
-        const modelUrl = 'https://github.com/yourusername/yourmodel.model';
-
-        // Function to predict zone based on coordinates using the model from GitHub
-        async function predictZone(latitude, longitude) {
-            try {
-                const response = await fetch(modelUrl);
-                const modelData = await response.text();
-
-                // Load the model (replace this with your actual model loading code)
-                const model = await tf.loadLayersModel(tf.io.browserFiles([new File([modelData], 'model.json')]));
-                
-                // Prepare input data (replace this with your data preprocessing logic)
-                const inputData = tf.tensor([[latitude, longitude]]);
-
-                // Make predictions using the loaded model
-                const predictions = model.predict(inputData);
-
-                // Decode the predicted label back to the original zone label
-                const predictedZone = getZoneFromLabel(predictions);
-
-                return predictedZone;
-            } catch (error) {
-                console.error('Prediction Error:', error);
-                return 'Unknown Zone';
+            // Replace this URL with your model's filename if it's in the same directory
+            const modelUrl = 'your_model.json';
+            
+            // Function to predict zone based on coordinates using the local model file
+            async function predictZone(latitude, longitude) {
+                try {
+                    // Load the model
+                    const model = await tf.loadLayersModel(`./${modelUrl}`);
+                    
+                    // Prepare input data (replace this with your data preprocessing logic)
+                    const inputData = tf.tensor([[latitude, longitude]]);
+            
+                    // Make predictions using the loaded model
+                    const predictions = model.predict(inputData);
+            
+                    // Decode the predicted label back to the original zone label
+                    const predictedZone = getZoneFromLabel(predictions);
+            
+                    return predictedZone;
+                } catch (error) {
+                    console.error('Prediction Error:', error);
+                    return 'Unknown Zone';
+                }
             }
-        }
+
 
         function getZoneColor(zone) {
             // Define zone-to-color mapping
