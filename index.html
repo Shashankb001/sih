@@ -22,6 +22,13 @@
         }).addTo(map);
 
         let circle = null; // Reference to the circle
+        let betaValue = null;  // Global variable to hold the beta value
+        let popup = null;  // Global variable to hold the Leaflet popup object
+
+        // Event listener for 'deviceorientation' event to capture gyroscope data
+        window.addEventListener('deviceorientation', (event) => {
+            betaValue = event.beta;  // Capture the beta value from gyroscope
+        });
 
         // Function to get user's location and predict zone
         async function getUserLocationAndPredict() {
@@ -30,6 +37,7 @@
                 const position = await getUserLocation();
 
                 // Predict zone based on the location (call your machine learning model from GitHub)
+                // Note: Ensure your predictZone function and other related functions/logic are correctly implemented
                 const userZone = await predictZone(position.latitude, position.longitude);
 
                 // Show prediction result
@@ -49,12 +57,24 @@
                     radius: 50, // Adjust the radius as needed
                 }).addTo(map);
 
+                // Remove the previous popup if it exists
+                if (popup) {
+                    map.removeLayer(popup);
+                }
+
+                // Create/update a Leaflet popup with the beta value inside the circle on the map
+                popup = L.popup()
+                    .setLatLng([position.latitude, position.longitude])
+                    .setContent(`Beta Value: ${betaValue}`)
+                    .openOn(map);
+
                 // Repeat the prediction after a delay (e.g., every 30 seconds)
                 setTimeout(getUserLocationAndPredict, 30000); // 30 seconds
             } catch (error) {
                 console.error('Error:', error);
             }
         }
+
 
 
 
@@ -78,31 +98,33 @@
                 }
             });
         }
-            // Replace this URL with your model's filename if it's in the same directory
-            const modelUrl = 'your_model.json';
-            
-            // Function to predict zone based on coordinates using the local model file
-            async function predictZone(latitude, longitude) {
-                try {
-                    // Load the model
-                    const model = await tf.loadLayersModel(`./${modelUrl}`);
-                    
-                    // Prepare input data (replace this with your data preprocessing logic)
-                    const inputData = tf.tensor([[latitude, longitude]]);
-            
-                    // Make predictions using the loaded model
-                    const predictions = model.predict(inputData);
-            
-                    // Decode the predicted label back to the original zone label
-                    const predictedZone = getZoneFromLabel(predictions);
-            
-                    return predictedZone;
-                } catch (error) {
-                    console.error('Prediction Error:', error);
-                    return 'Unknown Zone';
-                }
-            }
 
+        // Replace this URL with your model's filename if it's in the same directory
+        const modelUrl = 'your_model.json';
+
+        // Function to predict zone based on coordinates using the local model file
+        async function predictZone(latitude, longitude) {
+            try {
+                // Load the model
+                const model = await tf.loadLayersModel(`./${modelUrl}`);
+
+                // Prepare input data (replace this with your data preprocessing logic)
+                const inputData = tf.tensor([[latitude, longitude]]);
+
+                // Make predictions using the loaded model
+                const predictions = model.predict(inputData);
+
+                // Decode the predicted label back to the original zone label
+                const predictedZone = getZoneFromLabel(predictions);
+
+                return predictedZone;
+            } catch (error) {
+                console.error('Prediction Error:', error);
+                return 'Unknown Zone';
+            }
+        }
+
+        
 
         function getZoneColor(zone) {
             // Define zone-to-color mapping
