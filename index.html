@@ -21,6 +21,8 @@
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         }).addTo(map);
 
+        let circle = null; // Reference to the circle
+
         // Function to get user's location and predict zone
         async function getUserLocationAndPredict() {
             try {
@@ -33,9 +35,14 @@
                 // Show prediction result
                 document.getElementById('predictionResult').innerHTML = `Predicted Zone: ${userZone}`;
 
+                // Remove the previous circle if it exists
+                if (circle) {
+                    map.removeLayer(circle);
+                }
+
                 // Mark a radius on the map based on the predicted zone
                 const radiusColor = getZoneColor(userZone);
-                L.circle([position.latitude, position.longitude], {
+                circle = L.circle([position.latitude, position.longitude], {
                     color: radiusColor,
                     fillColor: radiusColor,
                     fillOpacity: 0.5,
@@ -48,6 +55,8 @@
                 console.error('Error:', error);
             }
         }
+
+
 
         // Function to get user's location using Geolocation API
         function getUserLocation() {
