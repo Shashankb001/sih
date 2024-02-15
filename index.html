@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Geo Points Map</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+</head>
+<body>
+    <div id="map" style="height: 500px;"></div>
+    <button id="downloadBtn">Download CSV</button>
+
+    <script>
+        const map = L.map('map').setView([0, 0], 13);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+        const markers = L.layerGroup().addTo(map);
+        const points = [];
+
+        // Get user's current location and center the map
+        navigator.geolocation.getCurrentPosition((position) => {
+            const { latitude, longitude } = position.coords;
+            map.setView([latitude, longitude], 13);
+            L.marker([latitude, longitude]).addTo(map).bindPopup('Your Location').openPopup();  // This line pins the user's location
+        });
+
+        map.on('click', (e) => {
+            const { lat, lng } = e.latlng;
+            const now = new Date().toLocaleTimeString();
+            const existingPoint = points.find(point => {
+                const distance = L.latLng(lat, lng).distanceTo(L.latLng(point.lat, point.lng));
+                return distance <= 10;
+            });
+
+            if (existingPoint) {
+                existingPoint.count++;
+                if (existingPoint.count >= 5) {
+                    existingPoint.zone = 'Red';
+                } else if (existingPoint.count >= 3) {
+                    existingPoint.zone = 'Orange';
+                }
+            } else {
+                points.push({
+                    lat,
+                    lng,
+                    time: now,
+                    count: 1,
+                    zone: 'black',
+                });
+            }
+
+            markers.clearLayers();
+            points.forEach(point => {
+                const color = point.zone === 'Red' ? 'red' : point.zone === 'Orange' ? 'orange' : 'black';
+                L.circle([point.lat, point.lng], { radius: 10, color }).addTo(markers);
+            });
+        });
+
+        document.getElementById('downloadBtn').addEventListener('click', () => {
+            let csvContent = 'data:text/csv;charset=utf-8,';
+            csvContent += 'Latitude,Longitude,Time,Count,Zone\n';
+            points.forEach(point => {
+                const row = `${point.lat},${point.lng},${point.time},${point.count},${point.zone}\n`;
+                csvContent += row;
+            });
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement('a');
+            link.setAttribute('href', encodedUri);
+            link.setAttribute('download', 'geo_points.csv');
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);  // Optional: remove the link element from the DOM
+        });
+    </script>
+</body>
+</html>
